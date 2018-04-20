@@ -1,0 +1,162 @@
+<input type="file" name="file" value="" class="file"><br>
+<input type="range" name="name" value="0" min="-200" max="200" class="heightInput"><br>
+<canvas id="canvas" width="2000" height="1500"></canvas>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript">
+
+"use strict"
+
+$(window).on("load", function() {
+    // go()
+    var canvas = $("canvas")[0]
+    g = canvas.getContext('2d')
+    // g.imageSmoothingEnabled = true;
+
+    if (window.devicePixelRatio > 1) {
+        canvasWidth = canvas.width;
+        canvasHeight = canvas.height;
+
+        canvas.width = canvasWidth * window.devicePixelRatio;
+        canvas.height = canvasHeight * window.devicePixelRatio;
+        canvas.style.width = canvasWidth;
+        canvas.style.height = canvasHeight;
+
+        g.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+
+
+    $(".file").change(function(){
+      console.log("read file")
+      readURL(this)
+    });
+
+    $(".heightInput").on("mouseup", function(){
+      console.log($(this).val());
+      heightMultiplier = $(this).val();
+      calculateY()
+      draw()
+    });
+});
+
+var sizeX = 300;
+var sizeY = 300;
+var tempCanvas;
+var g;
+var points;
+var inputImage;
+var canvasWidth;
+var canvasHeight
+var heightMultiplier = 50;
+
+function readURL(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+
+        reader.onload = function (e) {
+          console.log(e)
+          inputImage = new Image();
+          inputImage.src = e.target.result
+
+          inputImage.onload = function(){
+            tempCanvas = document.createElement('Canvas')
+            tempCanvas.width = inputImage.width
+            tempCanvas.height = inputImage.height
+            tempCanvas.getContext('2d').drawImage(inputImage, 0, 0, inputImage.width, inputImage.height)
+
+            go();
+          }
+        }
+
+        console.log("reding file");
+
+        reader.readAsDataURL(input.files[0])
+    }
+}
+
+
+function go() {
+
+  points = new Array();
+
+  class Point {
+    constructor(x,y,color) {
+      this.x = x
+      this.y = y
+      this.color = color
+      this.newY = y;
+    }
+  }
+
+  for (var i = 0; i < sizeX; i++) {
+    points[i] = new Array();
+    for (var j = 0; j < sizeX; j++) {
+      points[i][j] = new Point(i*8+(j%2?0.5:0)*8,j*8*0.577,tempCanvas.getContext('2d').getImageData(i * inputImage.width / sizeX,j*inputImage.height / sizeY, 1, 1).data);
+      // g.fillRect(points[i].x,points[i].y,1,1);
+    }
+  }
+  calculateY()
+  draw()
+  // setInterval(draw, 10);
+}
+
+function calculateY() {
+  for (var i = 0; i < sizeX; i++) {
+    for (var j = 0; j < sizeY; j++) {
+      points[i][j].newY = points[i][j].y - ((points[i][j].color[0]*heightMultiplier)/255)-40;
+      // console.log(points[i][j].newY);
+    }
+  }
+}
+
+function draw() {
+  g.fillStyle="white";
+  g.fillRect(0,0,canvasWidth,canvasHeight);
+  console.log(canvasWidth);
+
+  for (var j = 0; j < sizeY-1; j++) {
+    for (var i = 0; i < sizeX-1; i++) {
+
+      if(j%2){
+        var temp = points[i][j].color;
+        g.fillStyle = "rgb("+temp[0]+","+temp[0]+","+temp[0]+")";
+        g.beginPath();
+        g.moveTo(points[i+1][j].x,points[i+1][j].newY);
+        g.lineTo(points[i][j].x,points[i][j].newY);
+        g.lineTo(points[i+1][j+1].x,points[i+1][j+1].newY);
+        g.fill();
+      }else{
+        var temp = points[i][j].color;
+        g.fillStyle = "rgb("+temp[0]+","+temp[0]+","+temp[0]+")";
+        g.beginPath();
+        g.moveTo(points[i][j+1].x,points[i][j+1].newY);
+        g.lineTo(points[i+1][j].x,points[i+1][j].newY);
+        g.lineTo(points[i+1][j+1].x,points[i+1][j+1].newY);
+        g.fill();
+      }
+    }
+    for (var i = 0; i < sizeX-1; i++) {
+      if(j%2){
+        var temp = points[i][j].color;
+        g.fillStyle = "rgb("+temp[0]+","+temp[0]+","+temp[0]+")";
+        g.beginPath();
+        g.moveTo(points[i][j].x,points[i][j].newY);
+        g.lineTo(points[i+1][j+1].x,points[i+1][j+1].newY);
+        g.lineTo(points[i][j+1].x,points[i][j+1].newY);
+        g.fill();
+      }else{
+        var temp = points[i][j].color;
+        g.fillStyle = "rgb("+temp[0]+","+temp[0]+","+temp[0]+")";
+        // console.log(g.fillStyle);
+        g.beginPath();
+        g.moveTo(points[i][j].x,points[i][j].newY);
+        g.lineTo(points[i+1][j].x,points[i+1][j].newY);
+        g.lineTo(points[i][j+1].x,points[i][j+1].newY);
+        g.fill();
+      }
+    }
+  }
+}
+
+// console.log(points[4].x);
+
+</script>
